@@ -1313,10 +1313,14 @@ const MockServer = (() => {
   const need = (acc, lv) => { if (acc.level > lv) throw err(403, 'Không có quyền thực hiện thao tác này.'); };
   const getDs = pid => { const d = db.datasets.get(pid); if (!d) throw err(404, 'Không tìm thấy kỳ lương.'); return d; };
   /** Phạm vi dữ liệu theo quyền – áp dụng TRƯỚC mọi bộ lọc */
+  /** Quy tắc hiển thị: chỉ nhân sự các VNPT Khu vực, Trung tâm; ẩn Khối VP và chức danh Giám đốc / Phó Giám đốc */
+  const LEADER_RE = /^(phó |quyền )?giám đốc/iu;
+  const isVisible = e => khoiOf(e.unit) !== 'VP' && !LEADER_RE.test(String(e.title || '').trim());
   function scopeEmps(acc, d) {
-    if (acc.level === 1) return d.employees;
-    if (acc.level === 2) return d.employees.filter(e => e.unit === acc.unit);
-    return d.employees.filter(e => e.hrm === acc.hrm);
+    const vis = d.employees.filter(isVisible);
+    if (acc.level === 1) return vis;
+    if (acc.level === 2) return vis.filter(e => e.unit === acc.unit);
+    return vis.filter(e => e.hrm === acc.hrm);
   }
   function applyQuery(acc, list, q = {}) {
     if (q.unit && acc.level === 2 && q.unit !== acc.unit) throw err(403, 'Từ chối: không được xem dữ liệu của đơn vị khác.');
@@ -2500,9 +2504,10 @@ const Pages = {
     let hrm = lv === 3 ? App.user.hrm : App.S.profileHrm;
     let picker = '';
     if (lv < 3) {
-      const all = await Api.employees(App.S.pid, {});
+      const F = App.S.filters;
+      const all = await Api.employees(App.S.pid, { khoi: F.khoi, unit: F.unit, title: F.title, payGroup: F.payGroup, q: F.q });  // danh sách theo bộ lọc
       if (!all.some(e => e.hrm === hrm)) hrm = '';
-      picker = `<div class="formrow no-print" style="margin-bottom:12px"><div class="field"><label>Chọn người lao động (trong phạm vi được xem)</label><select class="select" data-pick style="max-width:440px"><option value="">— Chọn —</option>${all.sort((a, b) => a.name.localeCompare(b.name, 'vi')).map(e => `<option value="${U.esc(e.hrm)}" ${e.hrm === hrm ? 'selected' : ''}>${U.esc(e.name)} · ${U.esc(e.hrm)} · ${U.esc(e.unit)}</option>`).join('')}</select></div></div>`;
+      picker = `<div class="formrow no-print" style="margin-bottom:12px"><div class="field"><label>Chọn người lao động (${all.length} người theo bộ lọc${F.unit ? ': ' + U.esc(F.unit) : F.khoi ? ': ' + KHOI[F.khoi] : ''})</label><select class="select" data-pick style="max-width:440px"><option value="">— Chọn —</option>${all.sort((a, b) => a.name.localeCompare(b.name, 'vi')).map(e => `<option value="${U.esc(e.hrm)}" ${e.hrm === hrm ? 'selected' : ''}>${U.esc(e.name)} · ${U.esc(e.hrm)} · ${U.esc(e.unit)}</option>`).join('')}</select></div></div>`;
       if (!hrm) { el.innerHTML = pageHead('Hồ sơ thu nhập cá nhân', 'Chọn một người lao động, hoặc bấm vào tên ở các bảng xếp hạng/danh sách') + picker; Pages._bindPick(el); return; }
     }
     const [list, details] = await Promise.all([Api.employees(App.S.pid, { hrm }), Api.details(App.S.pid, { hrm })]);
