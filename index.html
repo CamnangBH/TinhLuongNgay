@@ -1979,9 +1979,6 @@ const PAGES = {
   compare: { label: 'So sánh đơn vị', label2: 'So sánh cùng chức danh', icon: 'compare', levels: [1, 2], sec: 'Phân tích' },
   ranking: { label: 'Xếp hạng Top 5', icon: 'trophy', levels: [1, 2], sec: 'Phân tích' },
   profile: { label: 'Hồ sơ thu nhập cá nhân', label3: 'Thu nhập của tôi', icon: 'user', levels: [1, 2, 3], sec: 'Phân tích' },
-  data: { label: 'Dữ liệu & kỳ lương', icon: 'upload', levels: [1], sec: 'Quản trị' },
-  formula: { label: 'Cấu hình công thức', icon: 'sliders', levels: [1], sec: 'Quản trị' },
-  accounts: { label: 'Tài khoản & phân quyền', icon: 'key', levels: [1], sec: 'Quản trị' },
 };
 const EMPTY_FILTERS = () => ({ khoi: '', unit: '', title: '', payGroup: '', domain: '', col: '', nature: '', typeId: '', q: '', hrm: '' });
 const APP_TITLE = 'DASHBOARD THEO DÕI SẢN LƯỢNG & TIỀN LƯƠNG – VNPT HẢI PHÒNG';
@@ -2030,7 +2027,7 @@ const App = {
     this.S.filters = EMPTY_FILTERS();
     await this.loadPeriods();
     this.renderShell();
-    const def = this.user.level === 3 ? 'profile' : (!this.periods.length && this.user.level === 1 ? 'data' : 'overview');
+    const def = this.user.level === 3 ? 'profile' : 'overview';
     this.go(location.hash.slice(2) || def);
   },
   async loadPeriods(selectId) {
@@ -2235,7 +2232,7 @@ const App = {
     }
   },
   noData() {
-    return `<div class="card"><div class="empty">${icon('upload', '')}<h3>Chưa có dữ liệu kỳ lương</h3><p>${this.user.level === 1 ? 'Vào trang <a href="#/data">Dữ liệu & kỳ lương</a> để tải file Excel hoặc nạp dữ liệu minh họa.' : 'Quản trị chưa tải dữ liệu kỳ lương nào. Vui lòng liên hệ quản trị.'}</p></div></div>`;
+    return `<div class="card"><div class="empty">${icon('upload', '')}<h3>Chưa có dữ liệu kỳ lương</h3><p>${this.user.level === 1 ? 'Chưa có dữ liệu kỳ lương.' : 'Quản trị chưa tải dữ liệu kỳ lương nào. Vui lòng liên hệ quản trị.'}</p></div></div>`;
   },
   async fetchScope(withDetails = false) {
     const pid = this.S.pid, q = this.eq();
